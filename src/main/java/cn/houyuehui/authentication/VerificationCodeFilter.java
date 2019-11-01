@@ -1,4 +1,4 @@
-package cn.houyuehui.component;
+package cn.houyuehui.authentication;
 
 import cn.houyuehui.common.exception.VerificationCodeException;
 import cn.houyuehui.common.handler.MyAuthenticationFailureHandler;
@@ -18,6 +18,7 @@ import java.io.IOException;
  * @Author: jsonhou
  * @Date: 2019/10/31 15:29
  */
+/*
 public class VerificationCodeFilter extends OncePerRequestFilter {
 
     private AuthenticationFailureHandler authenticationFailureHandler = new MyAuthenticationFailureHandler();
@@ -47,4 +48,4 @@ public class VerificationCodeFilter extends OncePerRequestFilter {
             throw new VerificationCodeException();
         }
     }
-}
+}*/
