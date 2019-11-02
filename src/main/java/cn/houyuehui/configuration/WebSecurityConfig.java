@@ -1,6 +1,9 @@
 package cn.houyuehui.configuration;
+
 import cn.houyuehui.common.handler.MyAuthenticationFailureHandler;
 import cn.houyuehui.component.MyAuthenticationProvider;
+import cn.houyuehui.repository.JdbcTokenReposityImpl;
+import cn.houyuehui.service.impl.MyUserDetailServiceImpl;
 import com.google.code.kaptcha.Producer;
 import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
@@ -14,14 +17,18 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Properties;
@@ -32,11 +39,6 @@ import java.util.Properties;
  */
 @EnableWebSecurity
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-
-    /*
-    @Autowired
-    private DataSource dataSource;
-*/
 
     @Bean
     public Producer captcha() {
@@ -58,6 +60,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private MyAuthenticationProvider myAuthenticationProvider;
 
+    @Autowired
+    private MyUserDetailServiceImpl myUserDetailService;
+    @Autowired
+    private JdbcTokenReposityImpl jdbcTokenReposity;
+    @Autowired
+    private DataSource dataSource;
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //指定登录成功的处理方式
@@ -91,18 +99,30 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 )
                 .permitAll()
                 .and()
+                .rememberMe().userDetailsService(myUserDetailService)
+                .tokenRepository(jdbcTokenReposity)
+                .and()
+                .logout()
+                .logoutUrl("/myLogout")
+                .logoutSuccessUrl("/")
+                .logoutSuccessHandler((httpServletRequest, httpServletResponse, authentication) -> {
+                    httpServletResponse.setContentType("application/json;charset=UTF-8");
+                    PrintWriter out = httpServletResponse.getWriter();
+                    out.write("{\"error_code\":\"0\",\"message\":\"注销系统成功\"}");
+                }).invalidateHttpSession(true)
+                .deleteCookies("cookies1")
+                .addLogoutHandler((httpServletRequest, httpServletResponse, authentication) -> {
+
+                }).and()
                 .csrf().disable();
         //简单的增加过滤器的方式
-       // http.addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class);
+        // http.addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.authenticationProvider(myAuthenticationProvider);
     }
-
-
-
 
     /*
     @Bean
@@ -113,6 +133,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         manager.createUser(User.withUsername("admin").password(passwordEncoder().encode("123")).roles("ADMIN").build());
         return manager;
     }
+
+    @Autowired
+    private DataSource dataSource;
 
     @Bean
     @Override
