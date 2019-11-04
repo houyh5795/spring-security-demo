@@ -90,4 +90,14 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return this.enable;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof User ? this.username.equals(((User) obj).username) : false;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.username.hashCode();
+    }
 }

@@ -1,5 +1,6 @@
 package cn.houyuehui.configuration;
 
+import cn.houyuehui.authentication.MyInvalidSessionStrategy;
 import cn.houyuehui.common.handler.MyAuthenticationFailureHandler;
 import cn.houyuehui.component.MyAuthenticationProvider;
 import cn.houyuehui.repository.JdbcTokenReposityImpl;
@@ -9,6 +10,8 @@ import com.google.code.kaptcha.impl.DefaultKaptcha;
 import com.google.code.kaptcha.util.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -24,6 +27,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
+import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -64,8 +69,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private MyUserDetailServiceImpl myUserDetailService;
     @Autowired
     private JdbcTokenReposityImpl jdbcTokenReposity;
-    @Autowired
-    private DataSource dataSource;
+
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //指定登录成功的处理方式
@@ -112,9 +117,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 }).invalidateHttpSession(true)
                 .deleteCookies("cookies1")
                 .addLogoutHandler((httpServletRequest, httpServletResponse, authentication) -> {
-
                 }).and()
-                .csrf().disable();
+               // .sessionManagement()
+                //.invalidSessionStrategy(new MyInvalidSessionStrategy())
+               // .and()
+                .csrf().disable()
+                .sessionManagement()
+                .maximumSessions(1);
         //简单的增加过滤器的方式
         // http.addFilterBefore(new VerificationCodeFilter(), UsernamePasswordAuthenticationFilter.class);
     }
